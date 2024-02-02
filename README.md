@@ -159,5 +159,5 @@ private void printEtc(HttpServletRequest request) {
 }
 ```
 * HTTP 정보는 아니지만 기타 정보 또한 출력할 수 있다.
-> 로컬에서 테스트 하면 IPv6 정보가 나온다, IPv4의 정보를 보고 싶다면 아래 옵션을 VM options에 넣어주면 된다
-> -Djava.net.preferIPv4Stack=true
+> * 로컬에서 테스트 하면 IPv6 정보가 나온다, IPv4의 정보를 보고 싶다면 아래 옵션을 VM options에 넣어주면 된다
+> * -Djava.net.preferIPv4Stack=true
