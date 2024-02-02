@@ -38,3 +38,13 @@ public class HelloServlet extends HttpServlet {
   + name: 서블릿 이름
   + urlPatterns: URL 매핑
 * HTTP요청을 통해 매핑된 URL이 호출되면 `protected void service(HttpServletRequest request, HttpServletResponse response)`를 호출한다.
+
+#### 1.3. 서블릿 컨테이너 동작 방식
+![image](https://github.com/helloJosh/spring-servlet-study/assets/37134368/13fe4f76-25ed-480c-9f32-4c2c40634cfd)
+* 스프링 부트에서 내장 톰켓 서버 생성
+
+![image](https://github.com/helloJosh/spring-servlet-study/assets/37134368/376762b0-95bc-47f2-a612-a18a96663fc5)
+* HTTP 요청 메세지를 기반으로 Request 생성후 서블릿 컨테이너에 전달
+* Response 객체 정보로 HTTP 응답
+
+
