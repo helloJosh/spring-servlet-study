@@ -163,8 +163,8 @@ private void printEtc(HttpServletRequest request) {
 > * -Djava.net.preferIPv4Stack=true
 
 
-### 1.6. HTTP Response 데이터-개요
-* HTTP Response를 통해 클라이언트에서 서버로 데이터를 전달하는 방법은 주로 아래와 같은 3가지 방법을 이용한다
+### 1.6. HTTP 요청 데이터-개요
+* HTTP Request를 통해 클라이언트에서 서버로 데이터를 전달하는 방법은 주로 아래와 같은 3가지 방법을 이용한다
 #### 1.6.1. GET - query parameter
 * /url**?username=hello&age=20**
 * 메시지 바디 없이, URL의 쿼리 파라미터에 데이터를 포함해서 전달
@@ -179,3 +179,165 @@ private void printEtc(HttpServletRequest request) {
 * HTTP API에서 주로 사용, JSON, XML, TEXT
 * 데이터 형식은 주로 JSON 사용
   + POST, PUT, PATCH
+
+### 1.7. HTTP 요청 데이터 - GET Query Parameter
+* 아래와 같이 URL와 ?를 시작으로 보내는 방법이다. 추가 파라미터는 &로 구분하면 된다.
+* 예) `http://localhost:8080/request-param?username=hello&age=20`
+
+```java
+String username = request.getParameter("username"); //단일 파라미터 조회
+Enumeration<String> parameterNames = request.getParameterNames(); //파라미터 이름들 모두 조회
+Map<String, String[]> parameterMap = request.getParameterMap(); //파라미터를 Map으로 조회
+String[] usernames = request.getParameterValues("username"); //복수 파라미터 조회
+```
+* Query Parameter 조회 메서드
+
+### 1.8. HTTP 요청 데이터 - POST HTML Form
+* content-type: `applicatioin/x-www-form-urlencoded`
+* 메시지 바디에 Query Parameter 형식으로 데이터를 전달한다. 예)`username=hello&age=20`
+```html
+<!DOCTYPE html>
+<html>
+  <head>
+      <meta charset="UTF-8">
+      <title>Title</title>
+  </head>
+  <body>
+    <form action="/request-param" method="post">
+      username: <input type="text" name="username" />
+      age: <input type="text" name="age" />
+      <button type="submit">전송</button>
+    </form>
+  </body>
+</html>
+```
+* POST의 HTML Form을 전송하면 웹브라우저는 밑의 형식으로 HTTP 메시지를 만든다.
+* **요청 URL**: http://localhost:8080/request-param
+* **content-type**: `application/x-www-form-urlencoded`
+* **message body**: `username=hello&age=20
+* 고도로 발달한 POST의 HTML Form은 앞에서 본 GET 쿼리 파라미터 형식과 구분할 수없기 때문에 쿼리 파라미터 조회 메서드를 그대로 사용하면 된다.
+
+### 1.9. HTTP 요청 데이터 - API 메세지 바디 - 단순 텍스트
+* HTTP message body**에 데이터를 직접 담아서 요청
+  + HTTP API에서 주로 사용, JSON, XML, TEXT
+  + 데이터 형식은 주로 JSON 사용
+  + POST, PUT, PATCH
+* 먼저 가장 단순한 텍스트 메시지를 HTTP 메시지 바디에 담아서 전송하고, 읽어보자.
+* HTTP 메시지 바디의 데이터를 InputStream을 사용해서 직접 읽을 수 있다.
+```java
+@WebServlet(name = "requestBodyStringServlet", urlPatterns = "/request-bodystring")
+public class RequestBodyStringServlet extends HttpServlet {
+  @Override
+  protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+    ServletInputStream inputStream = request.getInputStream();
+    String messageBody = StreamUtils.copyToString(inputStream, StandardCharsets.UTF_8);
+    System.out.println("messageBody = " + messageBody);
+    response.getWriter().write("ok");
+  }
+}
+```
+
+* POST http://localhost:8080/request-body-string
+* content-type: text/plain
+* message body: `hello`
+* 결과: `messageBody = hello`
+
+### 1.10. HTTP 요청 데이터 - API 메시지 바디 - JSON
+
+```java
+@Getter @Setter
+public class HelloData {
+  private String username;
+  private int age;
+}
+```
+* JSON 형식 파싱을 위한 객체
+```java
+@WebServlet(name = "requestBodyJsonServlet", urlPatterns = "/request-body-json")
+  public class RequestBodyJsonServlet extends HttpServlet {
+    private ObjectMapper objectMapper = new ObjectMapper();
+    @Override
+    protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+      ServletInputStream inputStream = request.getInputStream();
+      String messageBody = StreamUtils.copyToString(inputStream, StandardCharsets.UTF_8);
+      System.out.println("messageBody = " + messageBody);
+      HelloData helloData = objectMapper.readValue(messageBody, HelloData.class);
+      System.out.println("helloData.username = " + helloData.getUsername());
+      System.out.println("helloData.age = " + helloData.getAge());
+      response.getWriter().write("ok");
+  }
+}
+```
+* POST http://localhost:8080/request-body-json
+* content-type: **application/json**
+* message body: `{"username": "hello", "age": 20}`
+> JSON 결과를 파싱하는 기능은 Jackson, Gson 같은 JSON 변환 라이브러리를 추가해서 사용해야하지만, 스프링 부트로 Spring MVC를 선택하면 Jackson 라이브러리 ObjectMapper를 함께 제공한다.
+
+### 1.11. HttpServletResponse - 기본 사용법
+#### 1.11.1. HttpServletResponse 역할
+* HTTP 응답 메시지 생성
+    + HTTP 응답 코드 지정
+    + 헤더 생성
+    + 바디 생성
+* 편의 기능 제공
+    + Content-Type, 쿠키, Redirect
+#### 1.11.2. HttpServletResponse - 기본 사용법
+```java
+@WebServlet(name = "responseHeaderServlet", urlPatterns = "/response-header")
+public class ResponseHeaderServlet extends HttpServlet {
+  @Override
+  protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+    //[status-line]
+    response.setStatus(HttpServletResponse.SC_OK); //200
+
+    //[response-headers]
+    response.setHeader("Content-Type", "text/plain;charset=utf-8");
+    response.setHeader("Cache-Control", "no-cache, no-store, mustrevalidate");
+    response.setHeader("Pragma", "no-cache");
+    response.setHeader("my-header","hello");
+
+    //[Header 편의 메서드] 밑에서 다시 설명
+    content(response);
+    cookie(response);
+    redirect(response);
+
+    //[message body]
+    PrintWriter writer = response.getWriter();
+    writer.println("ok");
+  }
+}
+```
+* status-line 설정
+* 헤더 설정
+* 메시지 바디 설정
+```java
+private void content(HttpServletResponse response) {
+  //Content-Type: text/plain;charset=utf-8
+  //Content-Length: 2
+  //response.setHeader("Content-Type", "text/plain;charset=utf-8");
+  response.setContentType("text/plain");
+  response.setCharacterEncoding("utf-8");
+  //response.setContentLength(2); //(생략시 자동 생성)
+}
+```
+* Content 편의 메서드
+```java
+private void cookie(HttpServletResponse response) {
+  //Set-Cookie: myCookie=good; Max-Age=600;
+  //response.setHeader("Set-Cookie", "myCookie=good; Max-Age=600");
+  Cookie cookie = new Cookie("myCookie", "good");
+  cookie.setMaxAge(600); //600초
+  response.addCookie(cookie);
+}
+```
+* 쿠키 편의 메서드
+```java
+private void redirect(HttpServletResponse response) throws IOException {
+  //Status Code 302
+  //Location: /basic/hello-form.html
+  //response.setStatus(HttpServletResponse.SC_FOUND); //302
+  //response.setHeader("Location", "/basic/hello-form.html");
+  response.sendRedirect("/basic/hello-form.html");
+}
+```
+* redirect 편의 메서드
