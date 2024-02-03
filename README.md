@@ -163,24 +163,24 @@ private void printEtc(HttpServletRequest request) {
 > * -Djava.net.preferIPv4Stack=true
 
 
-### 1.6. HTTP 요청 데이터-개요
+#### 1.6. HTTP 요청 데이터-개요
 * HTTP Request를 통해 클라이언트에서 서버로 데이터를 전달하는 방법은 주로 아래와 같은 3가지 방법을 이용한다
-#### 1.6.1. GET - query parameter
+##### 1.6.1. GET - query parameter
 * /url**?username=hello&age=20**
 * 메시지 바디 없이, URL의 쿼리 파라미터에 데이터를 포함해서 전달
 * 예) 검색, 필터, 페이징등에서 많이 사용하는 방식
 
-#### 1.6.2. POST - HTML Form
+##### 1.6.2. POST - HTML Form
 * content-type: application/x-www-form-urlencoded
 * 메시지 바디에 쿼리 파리미터 형식으로 전달 username=hello&age=20
 * 예) 회원 가입, 상품 주문, HTML Form 사용
 
-#### 1.6.3. HTTP message body에 데이터를 직접 담아서 요청
+##### 1.6.3. HTTP message body에 데이터를 직접 담아서 요청
 * HTTP API에서 주로 사용, JSON, XML, TEXT
 * 데이터 형식은 주로 JSON 사용
   + POST, PUT, PATCH
 
-### 1.7. HTTP 요청 데이터 - GET Query Parameter
+#### 1.7. HTTP 요청 데이터 - GET Query Parameter
 * 아래와 같이 URL와 ?를 시작으로 보내는 방법이다. 추가 파라미터는 &로 구분하면 된다.
 * 예) `http://localhost:8080/request-param?username=hello&age=20`
 
@@ -192,7 +192,7 @@ String[] usernames = request.getParameterValues("username"); //복수 파라미�
 ```
 * Query Parameter 조회 메서드
 
-### 1.8. HTTP 요청 데이터 - POST HTML Form
+#### 1.8. HTTP 요청 데이터 - POST HTML Form
 * content-type: `applicatioin/x-www-form-urlencoded`
 * 메시지 바디에 Query Parameter 형식으로 데이터를 전달한다. 예)`username=hello&age=20`
 ```html
@@ -217,7 +217,7 @@ String[] usernames = request.getParameterValues("username"); //복수 파라미�
 * **message body**: `username=hello&age=20
 * 고도로 발달한 POST의 HTML Form은 앞에서 본 GET 쿼리 파라미터 형식과 구분할 수없기 때문에 쿼리 파라미터 조회 메서드를 그대로 사용하면 된다.
 
-### 1.9. HTTP 요청 데이터 - API 메세지 바디 - 단순 텍스트
+#### 1.9. HTTP 요청 데이터 - API 메세지 바디 - 단순 텍스트
 * HTTP message body**에 데이터를 직접 담아서 요청
   + HTTP API에서 주로 사용, JSON, XML, TEXT
   + 데이터 형식은 주로 JSON 사용
@@ -242,7 +242,7 @@ public class RequestBodyStringServlet extends HttpServlet {
 * message body: `hello`
 * 결과: `messageBody = hello`
 
-### 1.10. HTTP 요청 데이터 - API 메시지 바디 - JSON
+#### 1.10. HTTP 요청 데이터 - API 메시지 바디 - JSON
 
 ```java
 @Getter @Setter
@@ -273,15 +273,15 @@ public class HelloData {
 * message body: `{"username": "hello", "age": 20}`
 > JSON 결과를 파싱하는 기능은 Jackson, Gson 같은 JSON 변환 라이브러리를 추가해서 사용해야하지만, 스프링 부트로 Spring MVC를 선택하면 Jackson 라이브러리 ObjectMapper를 함께 제공한다.
 
-### 1.11. HttpServletResponse - 기본 사용법
-#### 1.11.1. HttpServletResponse 역할
+#### 1.11. HttpServletResponse - 기본 사용법
+##### 1.11.1. HttpServletResponse 역할
 * HTTP 응답 메시지 생성
     + HTTP 응답 코드 지정
     + 헤더 생성
     + 바디 생성
 * 편의 기능 제공
     + Content-Type, 쿠키, Redirect
-#### 1.11.2. HttpServletResponse - 기본 사용법
+##### 1.11.2. HttpServletResponse - 기본 사용법
 ```java
 @WebServlet(name = "responseHeaderServlet", urlPatterns = "/response-header")
 public class ResponseHeaderServlet extends HttpServlet {
@@ -342,7 +342,7 @@ private void redirect(HttpServletResponse response) throws IOException {
 ```
 * redirect 편의 메서드
 
-### 1.12. HTTP 응답 데이터 - 단순텍스트,HTML
+#### 1.12. HTTP 응답 데이터 - 단순텍스트,HTML
 ```java
 @WebServlet(name = "responseHtmlServlet", urlPatterns = "/response-html")
 public class ResponseHtmlServlet extends HttpServlet {
@@ -363,7 +363,7 @@ public class ResponseHtmlServlet extends HttpServlet {
 * HttpServletResponse - HTML 응답
 * HTTP 응답으로 HTML을 반환할 때는 content-type을 text/html로 지정해야한다.
 
-### 1.13. HTTP 응답 데이터 - API Json
+#### 1.13. HTTP 응답 데이터 - API Json
 ```java
 @WebServlet(name = "responseJsonServlet", urlPatterns = "/response-json")
 public class ResponseJsonServlet extends HttpServlet {
@@ -386,3 +386,147 @@ public class ResponseJsonServlet extends HttpServlet {
 ```
 * HTTP 응답으로 JSON을 반환 할 때는 content-type을 application/json로 지정해야한다.
 * Jackson 라이브러리가 제공하는 objectMapper.writeValueAsString()을 사용하면 객체를 JSON 문자로 변경할 수 있다.
+
+***
+### 2. 서블릿->JSP->MVC 패턴 변화
+#### 2.1. 간단한 회원 관리 웹 애플리케이션
+* **회원 정보**
+  + 이름: `username`
+  + 나이: `age`
+* **기능 요구사항**
+  + 회원 저장
+  + 회원 목록 조회
+```java
+@Getter @Setter
+@AlrgConstructor
+public class Member {
+  private Long id;
+  private String username;
+  private int age;
+}
+```
+```java
+public class MemberRepository {
+  private static Map<Long, Member> store = new HashMap<>(); //static 사용
+  private static long sequence = 0L; //static 사용
+  private static final MemberRepository instance = new MemberRepository();
+  // 중략
+  public Member save(Member member) {
+    member.setId(++sequence);
+    store.put(member.getId(), member);
+    return member;
+  }
+  public Member findById(Long id) {
+    return store.get(id);
+  }
+  public List<Member> findAll() {
+    return new ArrayList<>(store.values());
+  }
+}
+```
+
+#### 2.2. 서블릿으로 코드 만들기
+```java
+@WebServlet(name = "memberFormServlet", urlPatterns = "/servlet/members/newform")
+public class MemberFormServlet extends HttpServlet {
+  @Override
+  protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+    response.setContentType("text/html");
+    response.setCharacterEncoding("utf-8");
+
+    PrintWriter w = response.getWriter();
+    w.write("<!DOCTYPE html>\n" +
+            "<html>\n" +
+            "<head>\n" +
+            " <meta charset=\"UTF-8\">\n" +
+            " <title>Title</title>\n" +
+            "</head>\n" +
+            "<body>\n" +
+            "<form action=\"/servlet/members/save\" method=\"post\">\n" +
+            " username: <input type=\"text\" name=\"username\" />\n" +
+            " age: <input type=\"text\" name=\"age\" />\n" +
+            " <button type=\"submit\">전송</button>\n" +
+            "</form>\n" +
+            "</body>\n" +
+            "</html>\n");
+  }
+}
+```
+* localhost:8080/servlet/members/newform 요청시 회원 정보를 입력할 수 있는 HTML Form을 만들어서 응답한다.
+```java
+@WebServlet(name = "memberSaveServlet", urlPatterns = "/servlet/members/save")
+public class MemberSaveServlet extends HttpServlet {
+  private MemberRepository memberRepository = MemberRepository.getInstance();
+  @Override
+  protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+    System.out.println("MemberSaveServlet.service");
+    String username = request.getParameter("username");
+    int age = Integer.parseInt(request.getParameter("age"));
+    Member member = new Member(username, age);
+    System.out.println("member = " + member);
+    memberRepository.save(member);
+
+    response.setContentType("text/html");
+    response.setCharacterEncoding("utf-8");
+
+    PrintWriter w = response.getWriter();
+    w.write("<html>\n" +
+            "<head>\n" +
+            " <meta charset=\"UTF-8\">\n" +
+            "</head>\n" +
+            "<body>\n" +
+            "성공\n" +
+            "<ul>\n" +
+            " <li>id="+member.getId()+"</li>\n" +
+            " <li>username="+member.getUsername()+"</li>\n" +
+            " <li>age="+member.getAge()+"</li>\n" +
+            "</ul>\n" +
+            "<a href=\"/index.html\">메인</a>\n" +
+            "</body>\n" +
+            "</html>");
+  }
+}
+```
+* localhost:8080/servlet/members/save?usernmae=dd&?age=30 요청시 데이터를 가져와 Member 객체를 만들고 MemberRepository에 저장한다.
+
+```java
+@WebServlet(name = "memberListServlet", urlPatterns = "/servlet/members")
+public class MemberListServlet extends HttpServlet {
+private MemberRepository memberRepository = MemberRepository.getInstance();
+@Override
+protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+  response.setContentType("text/html");
+  response.setCharacterEncoding("utf-8");
+  List<Member> members = memberRepository.findAll();
+  PrintWriter w = response.getWriter();
+  w.write("<html>");
+  w.write("<head>");
+  w.write(" <meta charset=\"UTF-8\">");
+  w.write(" <title>Title</title>");
+  w.write("</head>");
+  w.write("<body>");
+  w.write("<a href=\"/index.html\">메인</a>");
+  w.write("<table>");
+  w.write(" <thead>");
+  w.write(" <th>id</th>");
+  w.write(" <th>username</th>");
+  w.write(" <th>age</th>");
+  w.write(" </thead>");
+  w.write(" <tbody>");
+  for (Member member : members) {
+    w.write(" <tr>");
+    w.write(" <td>" + member.getId() + "</td>");
+    w.write(" <td>" + member.getUsername() + "</td>");
+    w.write(" <td>" + member.getAge() + "</td>");
+    w.write(" </tr>");
+  }
+  w.write(" </tbody>");
+  w.write("</table>");
+  w.write("</body>");
+  w.write("</html>");
+  }
+}
+```
+* localhost:8080/servlet/members 요청시 for 루프를 통해 회원 수 만큼 동적으로 생성하고 응답한다.
+
+#### 2.3. JSP로 변경
