@@ -341,3 +341,48 @@ private void redirect(HttpServletResponse response) throws IOException {
 }
 ```
 * redirect 편의 메서드
+
+### 1.12. HTTP 응답 데이터 - 단순텍스트,HTML
+```java
+@WebServlet(name = "responseHtmlServlet", urlPatterns = "/response-html")
+public class ResponseHtmlServlet extends HttpServlet {
+@Override
+  protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+    //Content-Type: text/html;charset=utf-8
+    response.setContentType("text/html");
+    response.setCharacterEncoding("utf-8");
+    PrintWriter writer = response.getWriter();
+    writer.println("<html>");
+    writer.println("<body>");
+    writer.println(" <div>안녕?</div>");
+    writer.println("</body>");
+    writer.println("</html>");
+  }
+}
+```
+* HttpServletResponse - HTML 응답
+* HTTP 응답으로 HTML을 반환할 때는 content-type을 text/html로 지정해야한다.
+
+### 1.13. HTTP 응답 데이터 - API Json
+```java
+@WebServlet(name = "responseJsonServlet", urlPatterns = "/response-json")
+public class ResponseJsonServlet extends HttpServlet {
+  private ObjectMapper objectMapper = new ObjectMapper();
+  @Override
+  protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+    //Content-Type: application/json
+    response.setHeader("content-type", "application/json");
+    response.setCharacterEncoding("utf-8");
+
+    HelloData data = new HelloData();
+    data.setUsername("kim");
+    data.setAge(20);
+
+    //{"username":"kim","age":20}
+    String result = objectMapper.writeValueAsString(data);
+    response.getWriter().write(result);
+  }
+}
+```
+* HTTP 응답으로 JSON을 반환 할 때는 content-type을 application/json로 지정해야한다.
+* Jackson 라이브러리가 제공하는 objectMapper.writeValueAsString()을 사용하면 객체를 JSON 문자로 변경할 수 있다.
