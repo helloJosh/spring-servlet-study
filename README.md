@@ -659,3 +659,149 @@ JSP를 호출하는 것이다. <br/>
 > `redirect vs forward`<br/> 리다이렉트는 실제 클라이언트(웹 브라우저)에 응답이 나갔다가, 클라이언트가 redirect 경로로 다시 요청한다.
 따라서 클라이언트가 인지할 수 있고, URL 경로도 실제로 변경된다. 반면에 포워드는 서버 내부에서 일어나는 호
 출이기 때문에 클라이언트가 전혀 인지하지 못한다.
+
+##### 2.6.2 회원 등록 폼 - 뷰
+```html
+<%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+  </head>
+  <body>
+    <!-- 상대경로 사용, [현재 URL이 속한 계층 경로 + /save] -->
+    <form action="save" method="post">
+      username: <input type="text" name="username" />
+      age: <input type="text" name="age" />
+      <button type="submit">전송</button>
+    </form>
+  </body>
+</html>
+```
+* 예전 코드와다르게 절대 경로가 아닌 상대경로로 설정해둔다.
+
+##### 2.6.3. 회원 저장 - 컨트롤러
+```java
+@WebServlet(name = "mvcMemberSaveServlet", urlPatterns = "/servlet-mvc/members/
+save")
+public class MvcMemberSaveServlet extends HttpServlet {
+  private MemberRepository memberRepository = MemberRepository.getInstance();
+  @Override
+  protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+    String username = request.getParameter("username");
+    int age = Integer.parseInt(request.getParameter("age"));
+
+    Member member = new Member(username, age);
+    System.out.println("member = " + member);
+    memberRepository.save(member);
+
+    //Model에 데이터를 보관한다.
+    request.setAttribute("member", member);
+    String viewPath = "/WEB-INF/views/save-result.jsp";
+    RequestDispatcher dispatcher = request.getRequestDispatcher(viewPath);
+    dispatcher.forward(request, response);
+  }
+}
+```
+* HttpServletRequest를 Model로 사용한다.
+* request가 제공하는 `setAttribute()` 를 사용하면 request 객체에 데이터를 보관해서 뷰에 전달할 수 있다.
+* 뷰는 `request.getAttribute()` 를 사용해서 데이터를 꺼내면 된다.
+
+#### 2.6.4. 회원 저장 - 뷰
+```java
+<%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<html>
+  <head>
+  <meta charset="UTF-8">
+  </head>
+    <body>
+    성공
+    <ul>
+      <li>id=${member.id}</li>
+      <li>username=${member.username}</li>
+      <li>age=${member.age}</li>
+    </ul>
+    <a href="/index.html">메인</a>
+  </body>
+</html>
+```
+* `<%= request.getAttribute("member")%>` 로 모델에 저장한 member 객체를 꺼낼 수 있지만, 너무 복잡해진다. 자바코드가 안 섞이도록 노력한다.
+* JSP는 `${}` 문법을 제공하는데, 이 문법을 사용하면 request의 attribute에 담긴 데이터를 편리하게 조회할 수 있다.
+
+##### 2.6.5. 회원 목록 조회 - 컨트롤러
+```java
+@WebServlet(name = "mvcMemberListServlet", urlPatterns = "/servlet-mvc/members")
+public class MvcMemberListServlet extends HttpServlet {
+  private MemberRepository memberRepository = MemberRepository.getInstance();
+  @Override
+  protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+    System.out.println("MvcMemberListServlet.service");
+    List<Member> members = memberRepository.findAll();
+    request.setAttribute("members", members);
+    String viewPath = "/WEB-INF/views/members.jsp";
+    RequestDispatcher dispatcher = request.getRequestDispatcher(viewPath);
+    dispatcher.forward(request, response);
+  }
+}
+```
+* request 객체를 사용해서 `List<Member> members` 를 모델에 보관했다.
+
+##### 2.6.6. 회원 목록 조회 - 뷰
+```java
+<%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+  </head>
+  <body>
+    <a href="/index.html">메인</a>
+    <table>
+    <thead>
+      <th>id</th>
+      <th>username</th>
+      <th>age</th>
+    </thead>
+    <tbody>
+      <c:forEach var="item" items="${members}">
+        <tr>
+          <td>${item.id}</td>
+          <td>${item.username}</td>
+          <td>${item.age}</td>
+        </tr>
+      </c:forEach>
+    </tbody>
+    </table>
+  </body>
+</html>
+```
+* `<c:forEach>` 이 기능을 사용하려면 다음과 같이 선언해야 한다. `<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
+* 아래와 같이 출력해도되지만 자바 코드가 섞이게 되서 지양한다.
+```java
+<%
+  for (Member member : members) {
+    out.write(" <tr>");
+    out.write(" <td>" + member.getId() + "</td>");
+    out.write(" <td>" + member.getUsername() + "</td>");
+    out.write(" <td>" + member.getAge() + "</td>");
+    out.write(" </tr>");
+  }
+%>
+```
+
+#### 2.7. MVC 패턴의 한계
+* 포워드 중복
+  + View로 이동하는 코드가 항상 중복 호출되고 있다.
+```java
+RequestDispatcher dispatcher = request.getRequestDispatcher(viewPath);
+dispatcher.forward(request, response);
+```
+* ViewPath 중복
+    + `String viewPath = "/WEB-INF/views/new-form.jsp";`
+* 사용하지 않는 코드
+    + `HttpServletRequest request, HttpServletResponse response` 테스트 케이스 작성도 어렵다.
+* 공통 처리가 어렵다
+    + 프론트 컨트롤러 패턴을 도입하는 것으로 해결할수있다.
+
+###
