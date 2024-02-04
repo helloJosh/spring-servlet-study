@@ -530,3 +530,132 @@ protected void service(HttpServletRequest request, HttpServletResponse response)
 * localhost:8080/servlet/members 요청시 for 루프를 통해 회원 수 만큼 동적으로 생성하고 응답한다.
 
 #### 2.3. JSP로 변경
+##### 2.3.1 JSP 코드 작성성
+```html
+<%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<html>
+  <head>
+    <title>Title</title>
+  </head>
+  <body>
+    <form action="/jsp/members/save.jsp" method="post">
+    username: <input type="text" name="username" />
+    age: <input type="text" name="age" />
+    <button type="submit">전송</button>
+    </form>
+  </body>
+</html>
+```
+* main/webapp/jsp/members/new-form.jsp 파일 위와 같이 생생성
+* `<%@ page contentType="text/html;charset=UTF-8" language="java" %>`
+  + JSP문서라는 표시
+
+```html
+<%@ page import="hello.servlet.domain.member.MemberRepository" %>
+<%@ page import="hello.servlet.domain.member.Member" %>
+<%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<%
+  // request, response 사용 가능
+  MemberRepository memberRepository = MemberRepository.getInstance();
+  System.out.println("save.jsp");
+  String username = request.getParameter("username");
+  int age = Integer.parseInt(request.getParameter("age"));
+  Member member = new Member(username, age);
+  System.out.println("member = " + member);
+  memberRepository.save(member);
+%>
+<html>
+  <head>
+    <meta charset="UTF-8">
+  </head>
+  <body>
+    <ul>
+        <li>id=<%=member.getId()%></li>
+        <li>username=<%=member.getUsername()%></li>
+        <li>age=<%=member.getAge()%></li>
+    </ul>
+    <a href="/index.html">메인</a>
+  </body>
+</html>
+```
+* `main/webapp/jsp/members/save.jsp` 생성 , 회원 저장 기능
+* `<%@ page import="hello.servlet.domain.member.MemberRepository" %>`
+  + 자바의 import 문과 같다.
+* `<% ~~ %>`
+  + 이 부분에는 자바 코드를 입력할 수 있다.
+* `<%= ~~ %>`
+  + 이부분에는 자바 코드를 출력할 수 있다.
+ 
+```html
+<%@ page import="java.util.List" %>
+<%@ page import="hello.servlet.domain.member.MemberRepository" %>
+<%@ page import="hello.servlet.domain.member.Member" %>
+<%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<%
+MemberRepository memberRepository = MemberRepository.getInstance();
+List<Member> members = memberRepository.findAll();
+%>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+  </head>
+  <body>
+    <a href="/index.html">메인</a>
+    <table>
+      <thead>
+        <th>id</th>
+        <th>username</th>
+        <th>age</th>
+      </thead>
+      <tbody>
+      <%
+        for (Member member : members) {
+          out.write(" <tr>");
+          out.write(" <td>" + member.getId() + "</td>");
+          out.write(" <td>" + member.getUsername() + "</td>");
+          out.write(" <td>" + member.getAge() + "</td>");
+          out.write(" </tr>");
+        }
+      %>
+      </tbody>
+    </table>
+  </body>
+</html>
+```
+* `main/webapp/jsp/members.jsp` 회원 목록 출력
+#### 2.4. 서블릿과 JSP의 한계
+* 서블릿으로 개발 : 뷰 화면을 위한 HTML 작업이 자바 코드와 섞여서 지저분함
+* JSP 또한 동적으로 변경이 필요한 부분에는 자바 코드를 적용해야만함
+* JSP는 비즈니스 로직과 HTML 뷰 영역이 뒤섞여있다. 역할이 모여있다.
+* 이러한 난잡함은 유지보수가 굉장히 힘들어진다.
+
+#### 2.5. MVC 패턴 - 개요
+##### 2.5.1. MVC 패턴의 등장
+* 비즈니스 로직은 서블릿 처럼 다른 곳에서 처리, JSP는 목적에 맞게 HTML로 화면(view)를 그리는 일에 집중하게하는 MVC 패턴이 등장.
+
+##### 2.5.2. Model View Controller
+* 컨트롤러 : HTTP 요청을 받아서 파라미터를 검증하고, 비즈니스 로직을 실행한다. 그리고 뷰에 전달할 결과 데이터를 조회해서 모델에 담는다.
+* 모델 : 뷰에 출력할 데이터를 담아둔다. 뷰가 필요한 데이터를 모두 모델에 담아서 전달해주는 덕분에 뷰는 비즈니스 로직이나 데이터 접근을 몰라도 되고, 화면을 렌더링하는 일에 집중할 수 있다.
+* 뷰 : 모델에 담겨있는 데이터를 사용해서 화면을 그리는 일에 집중한다. 여기서는 HTML을 생성하는 부분을 말한다.
+![image](https://github.com/helloJosh/spring-servlet-study/assets/37134368/bde159c6-e918-4da6-9483-276d415214ea)
+
+#### 2.6. MVC 패턴 - 적용
+##### 2.6.1. 회원 등록 폼 - 컨트롤러
+```java
+@WebServlet(name = "mvcMemberFormServlet", urlPatterns = "/servlet-mvc/members/new-form")
+public class MvcMemberFormServlet extends HttpServlet {
+  @Override
+  protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+    String viewPath = "/WEB-INF/views/new-form.jsp";
+    RequestDispatcher dispatcher = request.getRequestDispatcher(viewPath);
+    dispatcher.forward(request, response);
+  }
+}
+```
+* `dispatcher.forward()` : 다른 서블릿이나 JSP로 이동할 수 있는 기능이다. 서버 내부에서 다시 호출이 발생한다.
+> `/WEB-INF`<br/> 이 경로안에 JSP가 있으면 외부에서 직접 JSP를 호출할 수 없다. 우리가 기대하는 것은 항상 컨트롤러를 통해서
+JSP를 호출하는 것이다. <br/>
+> `redirect vs forward`<br/> 리다이렉트는 실제 클라이언트(웹 브라우저)에 응답이 나갔다가, 클라이언트가 redirect 경로로 다시 요청한다.
+따라서 클라이언트가 인지할 수 있고, URL 경로도 실제로 변경된다. 반면에 포워드는 서버 내부에서 일어나는 호
+출이기 때문에 클라이언트가 전혀 인지하지 못한다.
