@@ -1362,6 +1362,7 @@ public interface MyHandlerAdapter {
   Object handler) throws ServletException, IOException;
 }
 ```
+***
 
 ### 4. 스프링 MVC
 #### 4.1. 스프링 MVC 구조 이해
