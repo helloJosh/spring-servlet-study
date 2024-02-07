@@ -1726,10 +1726,418 @@ public class MappingController {
 > **스프링 부트 3.0 이후**<br/>
 > 스프링 부트 3.0 부터는 `/hello-basic` , `/hello-basic/` 는 서로 다른 URL 요청을 사용해야 한다.<br/>
 
+### 6.2. HTTP 메서드 매핑
+```java
+/**
+* method 특정 HTTP 메서드 요청만 허용
+* GET, HEAD, POST, PUT, PATCH, DELETE
+*/
+@RequestMapping(value = "/mapping-get-v1", method = RequestMethod.GET)
+  public String mappingGetV1() {
+  log.info("mappingGetV1");
+  return "ok";
+}
+```
+* `@RequestMapping`에 `method`속성으로 HTTP 메서드를 지정하지 않으면 HTTP 메서드와 무관하게 호출된다. 즉 모두 허용(GET,HEAD,POST,PUT,PATCH,DELETE)
+* 위 코드에 POST 요청을 하면 스프링은 MVC HTTP 405 상태코드(Method Not Allowed)를 반환한다
+
+### 6.3 HTTP 메서드 매핑 축약
+```java
+/**
+* 편리한 축약 애노테이션 (코드보기)
+* @GetMapping
+* @PostMapping
+* @PutMapping
+* @DeleteMapping
+* @PatchMapping
+*/
+@GetMapping(value = "/mapping-get-v2")
+public String mappingGetV2() {
+  log.info("mapping-get-v2");
+  return "ok";
+}
+```
+* `@RequestMapping`과 `method`를 지정한 것을 축약하여 위의 애노테이션을 사용할 수 있다.
+
+### 6.4. PathVariable(경로 변수) 사용
+```java
+/**
+* PathVariable 사용
+* 변수명이 같으면 생략 가능
+* @PathVariable("userId") String userId -> @PathVariable String userId
+*/
+@GetMapping("/mapping/{userId}")
+public String mappingPath(@PathVariable("userId") String data) {
+  log.info("mappingPath userId={}", data);
+  return "ok";
+}
+```
+* HTTP API는 리소스 경로에 식별자를 넣는 스타일을 선호한다(/mapping/userA)
+* `@RequestMapping`은 URL 경로를 템플릿화 할 수 있는데, `@PathVariable`을 사용하면 매칭되는 부분을 편리하게 조회할 수 있다.
+* `@PathVariabvle`의 이름과 파라미터 이름이 같으면 생략할 수 있다.
+
+### 6.5. PathVariable 사용 - 다중
+```java
+/**
+* PathVariable 사용 다중
+*/
+@GetMapping("/mapping/users/{userId}/orders/{orderId}")
+public String mappingPath(@PathVariable String userId, @PathVariable Long orderId) {
+  log.info("mappingPath userId={}, orderId={}", userId, orderId);
+  return "ok";
+}
+```
+* `@PathVariable` 다중으로도 사용 가능
+
+### 6.6. 특정 파라미터 조건 매핑
+```java
+/**
+* 파라미터로 추가 매핑
+* params="mode",
+* params="!mode"
+* params="mode=debug"
+* params="mode!=debug" (! = )
+* params = {"mode=debug","data=good"}
+*/
+@GetMapping(value = "/mapping-param", params = "mode=debug")
+public String mappingParam() {
+  log.info("mappingParam");
+  return "ok";
+}
+```
+* 특정 조건의 파라미터를 매핑 가능
+
+### 6.7. 특정 헤더 조건 매핑
+```java
+/**
+* 특정 헤더로 추가 매핑
+* headers="mode",
+* headers="!mode"
+* headers="mode=debug"
+* headers="mode!=debug" (! = )
+*/
+@GetMapping(value = "/mapping-header", headers = "mode=debug")
+public String mappingHeader() {
+  log.info("mappingHeader");
+  return "ok";
+}
+```
+* 조건을 HTTP 헤더에서도 사용 가능
+
+### 6.7.미디어 타입 조건 매핑 - HTTP 요청 Content-Type, consume
+```java
+/**
+* Content-Type 헤더 기반 추가 매핑 Media Type
+* consumes="application/json"
+* consumes="!application/json"
+* consumes="application/*"
+* consumes="*\/*"
+* MediaType.APPLICATION_JSON_VALUE
+*/
+@PostMapping(value = "/mapping-consume", consumes = "application/json")
+public String mappingConsumes() {
+  log.info("mappingConsumes");
+  return "ok";
+}
+```
+* HTTP 요청의 Content-Type 헤더를 기반으로 미디어 타입으로 매핑한다.
+* 만약 맞지 않다면 HTTP 415 상태코드(Unsupported Media Type)을 반환한다.
+
+### 6.8. 미디어 타입 조건 매핑 - HTTP 요청 Accept, produce
+``` java
+/**
+* Accept 헤더 기반 Media Type
+* produces = "text/html"
+* produces = "!text/html"
+* produces = "text/*"
+* produces = "*\/*"
+*/
+@PostMapping(value = "/mapping-produce", produces = "text/html")
+public String mappingProduces() {
+  log.info("mappingProduces");
+  return "ok";
+}
+```
+* HTTP 요청의 Accept 헤더를 기반으로 미디어 타입으로 매핑한다.
+* 만약 맞지 않다면 HTTP 406 상태 코드(Not Acceptable)을 반환한다.
+
+# 7. 요청 매핑 - API 예시
+### 7.1. 회원 관리 API
+* 회원 목록 조회 : GET  `/users`
+* 회원 등록 : POST `/users`
+* 회원 조회 : GET `/users/{userId}`
+* 회원 수정 : PATCH `/users/{userId}`
+* 회원 삭제 : DELETE `/users/{userId}`
+
+### 7.2. MappingClassController
+```java
+@RestController
+@ReqeustMapping("/mapping/users")
+public class MappingClassController{
+  /**
+  * GET /mapping/users
+  */
+  @GetMapping
+  public String users(){
+    return "get users"
+  }
+  /**
+  * POST /mapping/users
+  */
+  @PostMapping
+  public String addUser() {
+    return "post user";
+  }
+  /**
+  * GET /mapping/users/{userId}
+  */
+  @GetMapping("/{userId}")
+  public String findUser(@PathVariable String userId) {
+    return "get userId=" + userId;
+  }
+  /**
+  * PATCH /mapping/users/{userId}
+  */
+  @PatchMapping("/{userId}")
+  public String updateUser(@PathVariable String userId) {
+    return "update userId=" + userId;
+  }
+  /**
+  * DELETE /mapping/users/{userId}
+  */
+  @DeleteMapping("/{userId}")
+  public String deleteUser(@PathVariable String userId) {
+    return "delete userId=" + userId;
+  }
+}
+```
+* 위 API로 만든 Controller
+
+### 7.3. HTTP 요청 - 기본, 헤더 조회
+* 애노테이션 기반의 스프링 컨트롤러는 다양한 파라미터를 지원한다.
+``` java
+@Slf4j
+@RestController
+public class RequestHeaderController {
+  @RequestMapping("/headers")
+  public String headers(HttpServletRequest request,
+                        HttpServletResponse response,
+                        HttpMethod httpMethod,
+                        Locale locale,
+                        @RequestHeader MultiValueMap<String, String>
+                        headerMap,
+                        @RequestHeader("host") String host,
+                        @CookieValue(value = "myCookie", required = false)
+                        String cookie) {
+    log.info("request={}", request);
+    log.info("response={}", response);
+    log.info("httpMethod={}", httpMethod);
+    log.info("locale={}", locale);
+    log.info("headerMap={}", headerMap);
+    log.info("header host={}", host);
+    log.info("myCookie={}", cookie);
+    return "ok";
+  }
+}
+```
+* HttpServletRequest
+* HttpServletResponse
+* HttpMethod : HTTP 메서드 조회
+* Locale : Locale 정보 조회
+* @RequestHeader MultiValueMap<String, String> headerMap : 모든 HTTP 헤더를 MutliValueMap 형식으로 조회한다.
+* @RequestHeader("host") String host
+    + 특정 HTTP 헤더를 조회한다.
+    + 속성
+        - 필수 값 여부 : required
+        - 기본 값 여부 : defaultValue
+* @CookieValue(value = "myCookie", required = false) String cookie
+    + 특정 쿠키를 조회한다.
+    + 속성
+        - 필수 값 여부 : required
+        - 기본 값 : defaultValue
+
+### 7.4. HTTP 요청 파라미터 - 쿼리 파라미터, HTML Form
+HTTP 요청 데이터 조회 
+* GET - 쿼리 파라미터
+    + /url**?username=hello&age=20**
+    + 메시지 바디 없이, URL의 쿼리 파라미터에 데이터를 포함해서 전달
+    + 예) 검색, 필터, 페이징등에서 많이 사용하는 방식
+* POST - HTML Form
+    + content-type: application/x-www-form-urlencoded
+    + 메시지 바디에 쿼리 파리미터 형식으로 전달 username=hello&age=20
+    + 예) 회원 가입, 상품 주문, HTML Form 사용
+* HTTP messageBody에 데이터 직접 담아서 요청
+    + HTTP API에서 주로 사용, JSON, XML, TEXT
+    + 데이터 형식은 주로 JSON 사용
+    + POST, PUT, PATCH
+
+#### 7.4.1 요청 파라미터V1 - 쿼리 파라미터, HTML Form
+```java
+@Slf4j
+@Controller
+public class RequestParamController {
+/**
+* 반환 타입이 없으면서 이렇게 응답에 값을 직접 집어넣으면, view 조회X
+*/
+@RequestMapping("/request-param-v1")
+  public void requestParamV1(HttpServletRequest request, HttpServletResponse response) throws IOException {
+    String username = request.getParameter("username");
+    int age = Integer.parseInt(request.getParameter("age"));
+    log.info("username={}, age={}", username, age);
+    response.getWriter().write("ok");
+  }
+}
+```
+* 요청 파라미터 조회 V1
+* Get 쿼리 파라미터 전송, Post HTML Form 전송 이든 둘다 형식이 같으므로 구분없이 조회가능하다.
+
+```html
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+  </head>
+  <body>
+    <form action="/request-param-v1" method="post">
+      username: <input type="text" name="username" />
+      age: <input type="text" name="age" />
+      <button type="submit">전송</button>
+    </form>
+  </body>
+</html>
+```
+### 7.4.2. 요청 파라미터V2 - @RequestParam
+```java
+/**
+* @RequestParam 사용
+* - 파라미터 이름으로 바인딩
+* @ResponseBody 추가
+* - View 조회를 무시하고, HTTP message body에 직접 해당 내용 입력
+*/
+@ResponseBody
+@RequestMapping("/request-param-v2")
+public String requestParamV2(
+                              @RequestParam("username") String memberName,
+                              @RequestParam("age") int memberAge) {
+  log.info("username={}, age={}", memberName, memberAge);
+  return "ok";
+}
+```
+* `@RequestParam` : 파라미터 이름으로 바인딩
+* `@ResponseBody` : View 조회를 무시하고, HTTP message body에 직접 해당 내용 입력
+* **@RequestParam**의 `name(value)` 속성이 파라미터 이름으로 사용
+  + @RequestParam("**username**") String **memberName
+  + request.getParameter("**username**")
+  + 두 개는 비슷한 코드
+
+### 7.4.3. 요청 파라미터 V3 - @RequestParam
+```java
+/**
+* @RequestParam 사용
+* HTTP 파라미터 이름이 변수 이름과 같으면 @RequestParam(name="xx") 생략 가능
+*/
+@ResponseBody
+@RequestMapping("/request-param-v3")
+public String requestParamV3(
+                              @RequestParam String username,
+                              @RequestParam int age) {
+  log.info("username={}, age={}", username, age);
+  return "ok";
+}
+```
+* HTTP 파라미터 이름이 변수 이름과 같으면 `@RequestParam(name="xx")` 생략 가능
+
+### 7.4.4. 요청 파라미터 V4 - @RequestParam
+```java
+/**
+* @RequestParam 사용
+* String, int 등의 단순 타입이면 @RequestParam 도 생략 가능
+*/
+@ResponseBody
+@RequestMapping("/request-param-v4")
+public String requestParamV4(String username, int age) {
+  log.info("username={}, age={}", username, age);
+  return "ok";
+}
+```
+* 매개변수 타입이 String, int와 같은 단순 타입일시 `@RequestParam`도 생략 가능
+> 하지만 매개변수 까지 생략하는 것은 명확하지 않기 때문에 넣어주는 것이 좋다고 생각된다.<br/>
+
+> Spring boot 3.0 이상 부터는 매개변수 이름이 생략되면 에러가 발생하기 때문에 두가지 해결방법이있다.<br/>
+> 컴파일 시정에 -parameters 옵션 적용하거나 Gradle로 빌드한다.<br/>
+> `@RequestParam("username") String username`,`@PathVariable("userId") String userId` 과같이 이름을 항상 적어준다 (권장)<br/>
+
+### 7.4.5. 파라미터 필수 여부 - requestParamRequired
+```java
+/**
+* @RequestParam.required
+* /request-param-required -> username이 없으므로 예외
+*
+* 주의!
+* /request-param-required?username= -> 빈문자로 통과
+*
+* 주의!
+* /request-param-required
+* int age -> null을 int에 입력하는 것은 불가능, 따라서 Integer 변경해야 함(또는 다음에 나오는
+defaultValue 사용)
+*/
+@ResponseBody
+@RequestMapping("/request-param-required")
+public String requestParamRequired(
+          @RequestParam(required = true) String username,
+          @RequestParam(required = false) Integer age) {
+  log.info("username={}, age={}", username, age);
+  return "ok";
+}
+```
+* `@RequestParam.required`
+  + 파라미터 필수 여부
+  + 기본값이 파라미터 필수(true)이다.
+* **주의! - 파라미터 이름만 사용**
+  + `/request-param-required?username=` 파라미터 이름만 있고 값이 없는 경우 빈문자로 통과
+* 주의! - 기본형(primitive)에 null 입력
+  + `@RequestParam(required = false) int age` : int에 null 입력 불가능 , 따라서 Integer로 변경하거나 `defaultValue` 사용
 
 
+### 7.4.6. 파라미터 필수 기본 값 적용 - requestParamDefault
+```java
+/**
+* @RequestParam
+* - defaultValue 사용
+*
+* 참고: defaultValue는 빈 문자의 경우에도 적용
+* /request-param-default?username=
+*/
+@ResponseBody
+@RequestMapping("/request-param-default")
+public String requestParamDefault(
+        @RequestParam(required = true, defaultValue = "guest") String username,
+        @RequestParam(required = false, defaultValue = "-1") int age) {
+  log.info("username={}, age={}", username, age);
+  return "ok";
+}
+```
+* 파라미터에 값이 없는 경우 `defaultValue` 를 사용하면 기본 값을 적용할 수 있다.
+* 이미 기본 값이 있기 때문에 `required` 는 의미가 없다.
+* `defaultValue` 는 빈 문자의 경우에도 설정한 기본 값이 적용된다.
+* `/request-param-default?username=`
 
+### 7.4.7. 파라미터를 Map으로 조회하기 - requestParamMap
+```java
+/**
+* @RequestParam Map, MultiValueMap
+* Map(key=value)
+* MultiValueMap(key=[value1, value2, ...]) ex) (key=userIds, value=[id1, id2])
+*/
+@ResponseBody
+@RequestMapping("/request-param-map")
+public String requestParamMap(@RequestParam Map<String, Object> paramMap) {
+  log.info("username={}, age={}", paramMap.get("username"),vparamMap.get("age"));
+  return "ok";
+}
+```
+* 파라미터의 값이 1개가 확실하다면 `Map` 을 사용해도 되지만, 그렇지 않다면 `MultiValueMap` 을 사용하자.
 
-
-
-
+***
+# 8. HTTP 요청 파라미터 - @ModelAttribute
