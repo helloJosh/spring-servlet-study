@@ -2141,3 +2141,40 @@ public String requestParamMap(@RequestParam Map<String, Object> paramMap) {
 
 ***
 # 8. HTTP 요청 파라미터 - @ModelAttribute
+```java
+@RequestParam String username;
+@RequestParam int age;
+HelloData data = new HelloData();
+data.setUsername(username);
+data.setAge(age);
+```
+* 보통 요청 파라미터를 받아서 필요한 객체를 만들고 그 객체에 값을 넣어준다.
+* 이 과정을 자동화 한 것이 @ModelAttribute이다.
+
+```java
+@Data
+public class HelloData {
+  private String username;
+  private int age;
+}
+```
+* 바인딩 받을 객체
+```java
+/**
+* @ModelAttribute 사용
+* 참고: model.addAttribute(helloData) 코드도 함께 자동 적용됨, 뒤에 model을 설명할 때 자세히
+설명
+*/
+@ResponseBody
+@RequestMapping("/model-attribute-v1")
+public String modelAttributeV1(@ModelAttribute HelloData helloData) {
+  log.info("username={}, age={}", helloData.getUsername(), helloData.getAge());
+  return "ok";
+}
+```
+* HelloData 객체가 생성되고, 요청 파라미터의 값도 모두 들어가있다.
+* @ModelAttribute 동작 방식
+  1. `HelloData`객체를 생성한다.
+  2. 요청 파라미터의 이름으로 HelloData 객체의 프로퍼티를 찾는다.
+  3. 해당 프로퍼티의 setter를 호출해서 파라미터의 값을 입력(바인딩)한다.
+  + 예) 파라미터 이름이 `username`이면 `setUsername()` 메서드를 찾아서 호출하면서 값을 입력한다.
