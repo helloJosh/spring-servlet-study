@@ -2566,6 +2566,57 @@ public class ResponseBodyController {
   + 요청 예) `@RequestBody HelloData data`
   + 응답 예) `@ResponseBody return helloData` 쓰기 미디어타입 `application/json` 관련
  
+### 13.3. HTTP 요청 데이터 읽기
+* HTTP 요청이 오고, 컨트롤러에서 `@RequestBody`, `HttpEntity` 파라미터를 사용한다.
+* 메시지 컨버터가 메시지를 읽을 수 있는지 확인하기 위해 `canRead()`를 호출한다.
+  + 대상 클래스 타입을 지원하는지( 예 : `@RequestBody`의 대상 클래스(`byte[]`, `String`, `HelloData`)
+  +HTTP 요청의 Content-Type 미디어 타입을 지원하는 (예 : `text/plain` , `application/json` , `*/*`)
+* `canRead()` 조건을 만족하면 `read()` 를 호출해서 객체 생성하고, 반환한다.
+
+### 13.4. HTTP 응답 데이터 생성
+* 컨트롤러에서 `@ResponseBody` , `HttpEntity` 로 값이 반환된다.
+* 메시지 컨버터가 메시지를 쓸 수 있는지  확인하기 위해 `canWrite()`를 호출한다.
+  + 대상 클래스 타입을 지원하는지 확인(return의 대상 클래스 : `byte[]` , `String` , `HelloData`)
+  + HTTP 요청의 Accept 미디어 타입을 지원하는가.(정확히는 `@RequestMapping`의 `produces`, 예 : `text/plain` , `application/json` , `*/*`)
+* `canWrite()` 조건을 만족하면 `write()`를 호출해서 HTTP 응답 메시지 바디에 데이터를 생성한다.
+
+### 13.3. 요청 매핑 핸들러 어댑터 구조
+![image](https://github.com/helloJosh/spring-servlet-study/assets/37134368/2571d877-b60f-47ef-af1a-e562bf36075b)
+* HTTP 메시지 컨버터는 `@RequestMapping` 을 처리하는 핸들러 어댑터인 `RequestMappingHandlerAdapter` (요청 매핑 헨들러 어뎁터)에 있다.
+
+#### 13.3.1. RequestMappingHandlerAdapter 동작방식
+![image](https://github.com/helloJosh/spring-servlet-study/assets/37134368/93753894-9103-43c5-819e-efa84ea89fca)
+##### 13.3.1.1 **ArgumentResolver**
+* 애노테이션 기반 컨트롤러를 처리하는 `RequestMappingHandlerAdapter` 는 바로 이 `ArgumentResolver` 를 호출해서 컨트롤러(핸들러)가 필요로 하는 다양한 파라미터의 값(객체)을 생성한다.
+* 파리미터의 값이 모두 준비되면 컨트롤러를 호출하면서 값을 넘겨준다.
+* 스프링은 30개가 넘는 `ArgumentResolver` 를 기본으로 제공한다.
+
+##### 13.3.1.2 **ReturnValueHandler**
+* ArgumentResolver` 와 비슷한데, 이것은 응답 값을 변환하고 처리한다.
+* 컨트롤러에서 String으로 뷰 이름을 반환해도, 동작하는 이유가 바로 ReturnValueHandler 덕분이다.
+
+#### 13.3.2. HTTP 메시지 컨버터
+![image](https://github.com/helloJosh/spring-servlet-study/assets/37134368/4338d22c-a825-45a0-9a11-58a7b50c345b)
+* HTTP 메시지 컨버터를 사용하는 `@RequestBody` 도 컨트롤러가 필요로 하는 파라미터의 값에 사용된다. `@ResponseBody` 의 경우도 컨트롤러의 반환 값을 이용한다.
+
+##### 13.3.2.1 요청
+* `@RequestBody` 를 처리하는 `ArgumentResolver` 가 있다.
+* `HttpEntity` 를 처리하는 `ArgumentResolver` 가 있다.
+* `ArgumentResolver` 들이 HTTP 메시지 컨버터를 사용해서 필요한 객체를 생성한다
+
+##### 13.3.2.2 응답
+* `@ResponseBody` 와 `HttpEntity` 를 처리하는 `ReturnValueHandler` 가 있다.
+* `@RequestBody` `@ResponseBody` 가 있으면 `RequestResponseBodyMethodProcessor()`를 사용한다.
+* HttpEntity` 가 있으면 `HttpEntityMethodProcessor()`를 사용한다.
+ 
+
+
+
+
+
+
+
+
 
 
 
